@@ -1,0 +1,17 @@
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/plasma
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/plasma.deps.json
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/plasma.runtimeconfig.json
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/plasma.dll
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/plasma.pdb
+/home/kyra/dev/plasma/Server/bin/Debug/net7.0/Rug.Osc.dll
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.csproj.AssemblyReference.cache
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.GeneratedMSBuildEditorConfig.editorconfig
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.AssemblyInfoInputs.cache
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.AssemblyInfo.cs
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.csproj.CoreCompileInputs.cache
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.csproj.CopyComplete
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.dll
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/refint/plasma.dll
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.pdb
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/plasma.genruntimeconfig.cache
+/home/kyra/dev/plasma/Server/obj/Debug/net7.0/ref/plasma.dll
