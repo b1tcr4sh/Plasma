@@ -1,45 +1,39 @@
-﻿using System.Net.Sockets;
-using System.Net;
-using System.Text;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using NLog.Extensions.Logging;
 
-public class Plasma {
-    public static async Task Main(string[] args) {
-        Console.Title = "Plasma Socket -> OSC Server";
-        
-        IPAddress address = IPAddress.Parse("127.0.0.1");
-        IPEndPoint endPoint = new IPEndPoint(address, 3012);
+namespace Plasma {
+    public class Program {
+        public static async Task Main(string[] args) {
+            Console.Title = "Plasma Socket -> OSC Server";
 
-        using Socket listener = new(
-        endPoint.AddressFamily,
-        SocketType.Stream,
-        ProtocolType.Tcp);
+            IHost host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((hostingContext, config) => {
+                config.AddEnvironmentVariables();
 
-        listener.Bind(endPoint);
-        listener.Listen(100);
+                if (args is null) {
+                    throw new ArgumentNullException("Missing parameters");
+                }
+                config.AddCommandLine(args);
+            })
+            .ConfigureServices((context, collection) => {
+                collection.AddSingleton<IHostedService, SocketServer>(provider => {
+                    return new SocketServer(context.Configuration);
+                });
+            })
+            // .ConfigureLogging((context, builder) => {
+            //     builder.AddNLog(context.Configuration);
+            // })
+            .Build();
 
-        Console.WriteLine("Listening...");
-        var handler = await listener.AcceptAsync();
-        while (true)
-        {
-            // Receive message.
-            var buffer = new byte[1_024];
-            var received = await handler.ReceiveAsync(buffer, SocketFlags.None);
-            var response = Encoding.UTF8.GetString(buffer, 0, received);
-            
-            var eom = "<|EOM|>";
-            // if (response.IndexOf(eom) > -1 /* is end of message */)
-            // {
-                Console.WriteLine(
-                    $"Socket server received message: \"{response.Replace(eom, "")}\"");
+            // SocketServer server = host.Services.GetService<SocketServer>();
+            // server.PacketReceived += OnPacketReceived;
 
-                var ackMessage = "<|ACK|>";
-                var echoBytes = Encoding.UTF8.GetBytes(ackMessage);
-                await handler.SendAsync(echoBytes, 0);
-                // Console.WriteLine(
-                //     $"Socket server sent acknowledgment: \"{ackMessage}\"");
-
-                // break;
-            // }
+            await host.RunAsync();
+        }
+        private static void OnPacketReceived(object sender, PacketReceivedEventArgs args) {
+            Console.WriteLine(args.content);
         }
     }
 }
