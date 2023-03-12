@@ -11,6 +11,7 @@ namespace Plasma {
         public event EventHandler<PacketReceivedEventArgs> PacketReceived;
         private Socket listenerSock;
         private Socket handlerSock;
+        private CancellationTokenSource waitCancellation;
         private string address;
         private int port;
         private readonly ILogger _logger;
@@ -48,18 +49,21 @@ namespace Plasma {
 
             _logger.LogInformation("Listening for TCP connections on {0}:{1}...", address, port);
             handlerSock = await listenerSock.AcceptAsync();
-            await WaitForPacketAsync(handlerSock);
+
+            waitCancellation = new CancellationTokenSource();
+            await WaitForPacketAsync(handlerSock, waitCancellation.Token);
         }
-        private async Task WaitForPacketAsync(Socket handler) {
+        private async Task WaitForPacketAsync(Socket handler, CancellationToken cancellation) {
             Byte[] buffer = new byte[1_024];
-            int resLength = await handler.ReceiveAsync(buffer, SocketFlags.None);
+            int resLength = await handler.ReceiveAsync(buffer, SocketFlags.None, cancellation);
             string res = Encoding.UTF8.GetString(buffer, 0, resLength);
             handler.Send(Encoding.UTF8.GetBytes("<|ACK|>"), SocketFlags.None);
 
             PacketReceived.Invoke(this, new PacketReceivedEventArgs(res));
-            await WaitForPacketAsync(handler);
+            await WaitForPacketAsync(handler, cancellation);
         }
         public Task StopAsync(CancellationToken token) {
+            waitCancellation.Cancel();
             _logger.LogInformation("Closing sockets...");
             listenerSock.Disconnect(true);
             handlerSock.Disconnect(false);

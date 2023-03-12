@@ -477,5 +477,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # VSCode
-./.vscode
-.vscode
+.vscode/
