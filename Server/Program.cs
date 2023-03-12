@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NLog.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Plasma {
     public class Program {
@@ -18,17 +18,17 @@ namespace Plasma {
                 config.AddCommandLine(args);
             })
             .ConfigureServices((context, collection) => {
-                collection.AddSingleton<IHostedService, SocketServer>(provider => {
-                    return new SocketServer(context.Configuration);
-                });
+                collection.AddSingleton<IHostedService, SocketServer>();
+                collection.AddLogging();
+                collection.Configure<SocketServer>(context.Configuration);
             })
-            // .ConfigureLogging((context, builder) => {
-            //     builder.AddNLog(context.Configuration);
-            // })
+            .ConfigureLogging((context, builder) => {
+                builder.ClearProviders();
+                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                builder.AddConsole();
+                
+            })
             .Build();
-
-            // SocketServer server = host.Services.GetService<SocketServer>();
-            // server.PacketReceived += OnPacketReceived;
 
             await host.RunAsync();
         }

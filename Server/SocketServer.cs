@@ -3,28 +3,28 @@ using Microsoft.Extensions.Configuration;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
-using NLog;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Plasma {
     public delegate void PacketReceived(object sender, PacketReceivedEventArgs e);
     public class SocketServer : IHostedService, IDisposable {
         public event EventHandler<PacketReceivedEventArgs> PacketReceived;
-        private Socket socket;
+        private Socket listenerSock;
+        private Socket handlerSock;
         private string address;
         private int port;
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
-        public SocketServer(IConfiguration config) {
-            // _logger = NLog.LogManager.GetCurrentClassLogger();
-
+        public SocketServer(IConfiguration config, ILogger<SocketServer> logger) {
+            _logger = logger;
+            // _logger = 
             try {
                 address = config["address"];
                 port = Int32.Parse(config["port"]);
 
             } catch (Exception e) {
-                _logger.Error(e.Message);
-                _logger.Trace(e.StackTrace);
+                _logger.LogError(e.Message);
+                _logger.LogTrace(e.StackTrace);
             }
         }
 
@@ -35,36 +35,58 @@ namespace Plasma {
             
             IPAddress ipAddress;
             if (!IPAddress.TryParse(address, out ipAddress)) {
-                Console.Error.WriteLine("IP address was malformed!");
-                throw new Exception("");
+                throw new Exception("IP address was malformed!");
             }
 
-            IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
-            socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            PacketReceived += OnPacket;
 
-            socket.Bind(endPoint);
-            socket.Listen(100);
-            Socket handler = await socket.AcceptAsync();
-            
-            // _logger.Debug("Listening for TCP sockers on {0}:{1}...", address, port);
-            Console.WriteLine("Listening for TCP sockers on {0}:{1}...", address, port);
-            await WaitForPacketAsync(handler);
+            IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
+            listenerSock = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            listenerSock.Bind(endPoint);
+            listenerSock.Listen(100);
+
+            _logger.LogInformation("Listening for TCP connections on {0}:{1}...", address, port);
+            handlerSock = await listenerSock.AcceptAsync();
+            await WaitForPacketAsync(handlerSock);
         }
         private async Task WaitForPacketAsync(Socket handler) {
             Byte[] buffer = new byte[1_024];
             int resLength = await handler.ReceiveAsync(buffer, SocketFlags.None);
             string res = Encoding.UTF8.GetString(buffer, 0, resLength);
-            await handler.SendAsync(Encoding.UTF8.GetBytes("<|ACK|>"));
+            handler.Send(Encoding.UTF8.GetBytes("<|ACK|>"), SocketFlags.None);
 
             PacketReceived.Invoke(this, new PacketReceivedEventArgs(res));
             await WaitForPacketAsync(handler);
         }
         public Task StopAsync(CancellationToken token) {
-            socket.Close();
+            _logger.LogInformation("Closing sockets...");
+            listenerSock.Disconnect(true);
+            handlerSock.Disconnect(false);
+            listenerSock.Shutdown(SocketShutdown.Both);
+            handlerSock.Shutdown(SocketShutdown.Both);
             return Task.CompletedTask;
         }
         public void Dispose() {
+            Dispose(true);
+        }
+        private void Dispose(bool disposing) {
+            _logger.LogInformation("Disposing socket server...");
+            if (disposing) {
+                if (listenerSock is not null && listenerSock.Connected) {
+                    listenerSock.Disconnect(false);
+                }
+                if (handlerSock is not null && handlerSock.Connected) {
+                    handlerSock.Disconnect(false);
+                }
+                _logger.LogInformation("Giving sockets connection 10 seconds to close...");
+                listenerSock.Close(5000);
+                handlerSock.Close(5000);
+            }
+        }
 
+        private void OnPacket(object sender, PacketReceivedEventArgs args) {
+            _logger.LogInformation("Received: " + args.content);
         }
     }
     public class PacketReceivedEventArgs : EventArgs {
