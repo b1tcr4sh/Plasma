@@ -64,11 +64,10 @@ namespace Plasma {
         }
         public Task StopAsync(CancellationToken token) {
             waitCancellation.Cancel();
+            waitCancellation.Dispose();
             _logger.LogInformation("Closing sockets...");
             listenerSock.Disconnect(true);
             handlerSock.Disconnect(false);
-            listenerSock.Shutdown(SocketShutdown.Both);
-            handlerSock.Shutdown(SocketShutdown.Both);
             return Task.CompletedTask;
         }
         public void Dispose() {
@@ -83,6 +82,9 @@ namespace Plasma {
                 if (handlerSock is not null && handlerSock.Connected) {
                     handlerSock.Disconnect(false);
                 }
+
+                listenerSock.Shutdown(SocketShutdown.Both);
+                handlerSock.Shutdown(SocketShutdown.Both);
                 _logger.LogInformation("Giving sockets connection 10 seconds to close...");
                 listenerSock.Close(5000);
                 handlerSock.Close(5000);
