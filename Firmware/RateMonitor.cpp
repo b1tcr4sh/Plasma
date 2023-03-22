@@ -5,7 +5,7 @@
 
 RateMonitor::RateMonitor() {
   if (!Sensor.begin(Wire, I2C_SPEED_FAST)) {
-    return null; 
+    kill; 
   }
 
   Sensor.setup(); 

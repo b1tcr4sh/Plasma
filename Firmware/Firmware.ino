@@ -12,9 +12,6 @@ void setup() {
   Serial.begin(115200);
 
   RateMonitor sensor = RateMonitor();
-  if (!sensor) {
-    Serial.println("Couldn't connect to MAX30105");
-  }
 
   wifi_connect();
 
