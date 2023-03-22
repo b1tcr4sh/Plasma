@@ -7,11 +7,12 @@
 #define SERVER_IP "SERVER_ADDRESS"
 
 WiFiClient client;
+RateMonitor sensor;
 
 void setup() {
   Serial.begin(115200);
 
-  RateMonitor sensor = RateMonitor();
+  sensor = RateMonitor();
 
   wifi_connect();
 
@@ -32,6 +33,8 @@ void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     wifi_connect();
   }
+
+  int bpm = sensor.bpm();
   
   client.write("uwu\0");
 }
