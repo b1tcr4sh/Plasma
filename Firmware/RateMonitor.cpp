@@ -3,40 +3,32 @@
 #include "heartRate.h"
 #include "RateMonitor.h"
 
-RateMonitor::RateMonitor(int samples) {
+RateMonitor::RateMonitor() {
   Sensor.begin(Wire, I2C_SPEED_FAST);
 
   Sensor.setup(); 
   Sensor.setPulseAmplitudeRed(0x0A); 
   Sensor.setPulseAmplitudeGreen(0);
-
-  sampleSize = samples;
-  rates = new byte[sampleSize];
 }
-int RateMonitor::average() {
-  beatAvg = 0;
-  for (byte x = 0 ; x < sampleSize ; x++) {
-    beatAvg += rates[x];
-  }
-  beatAvg /= sampleSize;
+float RateMonitor::sample(int size) {
+  float sum = 0;
+  long lastBeat = 0;
 
-  return beatAvg;
-}
-float RateMonitor::bpm() {
-  long irValue = particleSensor.getIR();
+  for (int i = 0; i < size;) {
+    long irValue = Sensor.getIR();
 
-  if (checkForBeat(irValue) == true) {
-    //We sensed a beat!
-    delta = millis() - lastBeat;
-    lastBeat = millis();
+    if (checkForBeat(irValue)) {
+      long delta = millis() - lastBeat;
+      lastBeat = millis();
 
-    float bpm = 60 / (delta / 1000.0);
+      float bpm = 60 / (delta / 1000.0);
 
-    if (bpm < 255 && bpm > 20) {
-      rates[rateSpot++] = (byte)bpm; 
-      rateSpot %= sampleSize;
+      if (bpm < 255 && bpm > 20) {
+        sum += bpm;
+        i++;
+      }
     }
   }
 
-  return bpm;
+  return sum / size;
 }

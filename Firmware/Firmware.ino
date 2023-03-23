@@ -34,9 +34,9 @@ void loop() {
     wifi_connect();
   }
 
-  int bpm = sensor.bpm();
+  int bpm = sensor.sample(4);
   
-  client.write("uwu\0");
+  client.write(bpm);
 }
 
 void wifi_connect() {
