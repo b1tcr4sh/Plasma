@@ -12,7 +12,7 @@
     <PackageReference Include="microsoft.extensions.logging" Version="7.0.0" />
     <PackageReference Include="nlog" Version="5.1.2" />
     <PackageReference Include="nlog.extensions.logging" Version="5.2.2" />
-    <PackageReference Include="rug.osc" Version="1.2.5" />
+    <PackageReference Include="vrcosclib" Version="1.4.3" />
   </ItemGroup>
 
 </Project>

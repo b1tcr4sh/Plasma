@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace Plasma {
+namespace Plasma.Server {
     public delegate void PacketReceived(object sender, PacketReceivedEventArgs e);
     public class SocketServer : IHostedService, IDisposable {
         public event EventHandler<PacketReceivedEventArgs> PacketReceived;
