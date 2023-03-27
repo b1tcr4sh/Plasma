@@ -16,7 +16,7 @@ namespace Plasma.Server {
         private int port;
         private readonly ILogger _logger;
 
-        public SocketServer(IConfiguration config, ILogger<SocketServer> logger) {
+        public SocketServer(IConfiguration config, ILogger<SocketServer> logger, IHostApplicationLifetime appLifetime) {
             _logger = logger;
             // _logger = 
             try {
@@ -27,6 +27,8 @@ namespace Plasma.Server {
                 _logger.LogError(e.Message);
                 _logger.LogTrace(e.StackTrace);
             }
+
+            appLifetime.ApplicationStopping.Register(OnStopping);
         }
 
         public async Task StartAsync(CancellationToken token) {
@@ -38,6 +40,8 @@ namespace Plasma.Server {
             if (!IPAddress.TryParse(address, out ipAddress)) {
                 throw new Exception("IP address was malformed!");
             }
+
+            
 
             PacketReceived += OnPacket;
 
@@ -90,9 +94,21 @@ namespace Plasma.Server {
                 handlerSock.Close(5000);
             }
         }
-
         private void OnPacket(object sender, PacketReceivedEventArgs args) {
             _logger.LogInformation("Received: " + args.content);
+        }
+        private void OnStopping() {
+            listenerSock.Close(5000);
+            handlerSock.Close(5000);
+
+            waitCancellation.Cancel();
+            waitCancellation.Dispose();
+            _logger.LogInformation("Closing sockets...");
+            listenerSock.Disconnect(false);
+            handlerSock.Disconnect(false);
+
+            listenerSock.Shutdown(SocketShutdown.Both);
+            handlerSock.Shutdown(SocketShutdown.Both);
         }
     }
     public class PacketReceivedEventArgs : EventArgs {

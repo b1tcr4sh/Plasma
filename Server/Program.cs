@@ -7,9 +7,9 @@ using Plasma.Server;
 namespace Plasma {
     public class Program {
         public static async Task Main(string[] args) {
-            Console.Title = "Plasma Socket -> OSC Server";
+            Console.Title = "Plasma Server";
 
-            IHost host = Host.CreateDefaultBuilder(args)
+            IHost oscClientHost = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((hostingContext, config) => {
                 config.AddEnvironmentVariables();
 
@@ -19,7 +19,8 @@ namespace Plasma {
                 config.AddCommandLine(args);
             })
             .ConfigureServices((context, collection) => {
-                collection.AddSingleton<IHostedService, SocketServer>();
+                collection.AddSingleton<IHostedService, OscClient>();
+                collection.AddScoped<SocketServer>();
                 collection.AddLogging();
                 collection.Configure<SocketServer>(context.Configuration);
             })
@@ -27,11 +28,22 @@ namespace Plasma {
                 builder.ClearProviders();
                 builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
                 builder.AddConsole();
-                
             })
             .Build();
 
-            await host.RunAsync();
+            // IHost oscClientHost = Host.CreateDefaultBuilder(args)
+            // .ConfigureAppConfiguration((hostingContext, config) => {
+            //     config.AddEnvironmentVariables();
+
+            //     if (args is null) {
+            //         throw new ArgumentNullException("Missing parameters");
+            //     }
+            //     config.AddCommandLine(args);
+            // })
+            // .ConfigureServices
+
+
+            await oscClientHost.RunAsync();
         }
         private static void OnPacketReceived(object sender, PacketReceivedEventArgs args) {
             Console.WriteLine(args.content);
