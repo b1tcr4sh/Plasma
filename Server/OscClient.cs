@@ -37,9 +37,13 @@ namespace Plasma.Server {
             _avatarConfig = await OscAvatarConfig.WaitAndCreateAtCurrentAsync();
             OscAvatarUtility.AvatarChanged += (param, args) => {
                 _avatarConfig = OscAvatarConfig.CreateAtCurrent();
-            };
+                WaitForValidAvatar();
+            };            
+            WaitForValidAvatar();
+            _enabled = (bool) _avatarConfig.Parameters["Plasma/enabled"];
+
             OscParameter.SendAvatarParameter("Plasma/connected", true);
-            _enabled = (bool) _avatarConfig.Parameters["Plasma/enable"]; // Doesn't handle if the avatar doesn't have the param
+
             if (!_enabled) {
                 WaitForEnable();
             }
@@ -62,6 +66,17 @@ namespace Plasma.Server {
             while (!_enabled) {
                 _enabled = (bool) _avatarConfig.Parameters["Plasma/enable"]; 
                 Thread.Sleep(1000);
+            }
+        }
+        private void WaitForValidAvatar() {
+            try {
+                var enabled = _avatarConfig.Parameters["Plasma/enable"];
+                var connected = _avatarConfig.Parameters["Plasma/connected"];
+                var bpm = _avatarConfig.Parameters["Plasma/bpm"];
+            } catch (KeyNotFoundException) {
+                _logger.LogWarning("Current avatar doesn't have needed paramters...");
+                Thread.Sleep(1000);
+                WaitForValidAvatar();
             }
         }
     }
