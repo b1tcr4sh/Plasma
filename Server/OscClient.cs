@@ -18,18 +18,6 @@ namespace Plasma.Server {
         }
 
         public bool receivingEnabled() => _enabled;
-        public void onHeartRate(Object sender, PacketReceivedEventArgs args) {
-            if (!_enabled) {
-                CancellationTokenSource tokenSource = new CancellationTokenSource();
-
-                _server.StopAsync(tokenSource.Token).GetAwaiter().GetResult();
-                WaitForEnable();
-                return;
-            }
-
-            OscParameter.SendAvatarParameter("Plasma/bpm", args.content);
-            
-        }
 
         public async Task StartAsync(CancellationToken token) {
             _logger.LogInformation("Starting OSC client");
@@ -61,7 +49,18 @@ namespace Plasma.Server {
         public void Dispose() {
 
         }
-        
+
+        private void onHeartRate(Object sender, PacketReceivedEventArgs args) {
+            if (!_enabled) {
+                CancellationTokenSource tokenSource = new CancellationTokenSource();
+
+                _server.StopAsync(tokenSource.Token).GetAwaiter().GetResult();
+                WaitForEnable();
+                return;
+            }
+
+            OscParameter.SendAvatarParameter("Plasma/bpm", args.content);
+        }
         private void WaitForEnable() {
             while (!_enabled) {
                 _enabled = (bool) _avatarConfig.Parameters["Plasma/enable"]; 
