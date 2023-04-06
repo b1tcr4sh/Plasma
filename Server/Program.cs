@@ -31,18 +31,6 @@ namespace Plasma {
             })
             .Build();
 
-            // IHost oscClientHost = Host.CreateDefaultBuilder(args)
-            // .ConfigureAppConfiguration((hostingContext, config) => {
-            //     config.AddEnvironmentVariables();
-
-            //     if (args is null) {
-            //         throw new ArgumentNullException("Missing parameters");
-            //     }
-            //     config.AddCommandLine(args);
-            // })
-            // .ConfigureServices
-
-
             await oscClientHost.RunAsync();
         }
         private static void OnPacketReceived(object sender, PacketReceivedEventArgs args) {

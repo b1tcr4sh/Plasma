@@ -53,6 +53,7 @@ namespace Plasma.Server {
 
             _logger.LogInformation("Listening for TCP connections on {0}:{1}...", address, port);
             handlerSock = await listenerSock.AcceptAsync();
+            _logger.LogInformation("Connected to a socket!");
 
             waitCancellation = new CancellationTokenSource();
             await WaitForPacketAsync(handlerSock, waitCancellation.Token);
