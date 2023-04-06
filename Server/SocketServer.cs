@@ -18,14 +18,16 @@ namespace Plasma.Server {
 
         public SocketServer(IConfiguration config, ILogger<SocketServer> logger, IHostApplicationLifetime appLifetime) {
             _logger = logger;
-            // _logger = 
             try {
                 address = config["address"];
                 port = Int32.Parse(config["port"]);
 
-            } catch (Exception e) {
-                _logger.LogError(e.Message);
-                _logger.LogTrace(e.StackTrace);
+            } catch (KeyNotFoundException) {
+                _logger.LogCritical("Missing arguments for server address/port");
+                Environment.Exit(-1);
+            } catch (ArgumentNullException) {
+                _logger.LogCritical("Missing required arguments!");
+                Environment.Exit(-1);
             }
 
             appLifetime.ApplicationStopping.Register(OnStopping);
@@ -40,11 +42,9 @@ namespace Plasma.Server {
             if (!IPAddress.TryParse(address, out ipAddress)) {
                 throw new Exception("IP address was malformed!");
             }
-
-            
-
+#if DEBUG 
             PacketReceived += OnPacket;
-
+#endif
             IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
             listenerSock = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -58,6 +58,24 @@ namespace Plasma.Server {
             waitCancellation = new CancellationTokenSource();
             await WaitForPacketAsync(handlerSock, waitCancellation.Token);
         }
+        public Task StopAsync(CancellationToken token) {
+            
+            return Task.CompletedTask;
+        }
+        public void Dispose() {
+            Dispose(true);
+        }
+
+        private void Dispose(bool disposing) {
+            if (!disposing) {
+                if (listenerSock is not null && listenerSock.Connected) {
+                    listenerSock.Disconnect(false);
+                }
+                if (handlerSock is not null && handlerSock.Connected) {
+                    handlerSock.Disconnect(false);
+                }
+            }
+        }
         private async Task WaitForPacketAsync(Socket handler, CancellationToken cancellation) {
             Byte[] buffer = new byte[1_024];
             int resLength = await handler.ReceiveAsync(buffer, SocketFlags.None, cancellation);
@@ -65,51 +83,21 @@ namespace Plasma.Server {
             handler.Send(Encoding.UTF8.GetBytes("<|ACK|>"), SocketFlags.None);
 
             PacketReceived.Invoke(this, new PacketReceivedEventArgs(res));
+            await Task.Delay(1000);
             await WaitForPacketAsync(handler, cancellation);
         }
-        public Task StopAsync(CancellationToken token) {
-            waitCancellation.Cancel();
-            waitCancellation.Dispose();
-            _logger.LogInformation("Closing sockets...");
-            listenerSock.Disconnect(true);
-            handlerSock.Disconnect(false);
-            return Task.CompletedTask;
-        }
-        public void Dispose() {
-            Dispose(true);
-        }
-        private void Dispose(bool disposing) {
-            _logger.LogInformation("Disposing socket server...");
-            if (disposing) {
-                if (listenerSock is not null && listenerSock.Connected) {
-                    listenerSock.Disconnect(false);
-                }
-                if (handlerSock is not null && handlerSock.Connected) {
-                    handlerSock.Disconnect(false);
-                }
-
-                listenerSock.Shutdown(SocketShutdown.Both);
-                handlerSock.Shutdown(SocketShutdown.Both);
-                _logger.LogInformation("Giving sockets connection 10 seconds to close...");
-                listenerSock.Close(5000);
-                handlerSock.Close(5000);
-            }
-        }
         private void OnPacket(object sender, PacketReceivedEventArgs args) {
-            _logger.LogInformation("Received: " + args.content);
+            _logger.LogDebug("Received: " + args.content);
         }
         private void OnStopping() {
-            listenerSock.Close(5000);
-            handlerSock.Close(5000);
+            _logger.LogInformation("Closing socket server");
 
-            waitCancellation.Cancel();
-            waitCancellation.Dispose();
-            _logger.LogInformation("Closing sockets...");
-            listenerSock.Disconnect(false);
-            handlerSock.Disconnect(false);
-
-            listenerSock.Shutdown(SocketShutdown.Both);
-            handlerSock.Shutdown(SocketShutdown.Both);
+            if (handlerSock is not null && listenerSock is not null) {
+                handlerSock.Shutdown(SocketShutdown.Both);
+                handlerSock.Close(1000);
+                listenerSock.Shutdown(SocketShutdown.Both);
+                listenerSock.Close();
+            }
         }
     }
     public class PacketReceivedEventArgs : EventArgs {

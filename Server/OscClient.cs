@@ -14,23 +14,20 @@ namespace Plasma.Server {
 
         public OscClient(SocketServer socketServer, IConfiguration config, ILogger<OscClient> logger) {
             _logger = logger;
-            if (socketServer is null) throw new ArgumentNullException("Socket server was not passed to OSC client");
+            _server = socketServer;
+            _server.PacketReceived += OnHeartRate;
+            OscAvatarUtility.AvatarChanged += OnAviChanged;
         }
 
         public bool receivingEnabled() => _enabled;
-
         public async Task StartAsync(CancellationToken token) {
             _logger.LogInformation("Starting OSC client");
 
-            _avatarConfig = await OscAvatarConfig.WaitAndCreateAtCurrentAsync();
-            OscAvatarUtility.AvatarChanged += (param, args) => {
-                _avatarConfig = OscAvatarConfig.CreateAtCurrent();
-                WaitForValidAvatar();
-            };            
+            _avatarConfig = await OscAvatarConfig.WaitAndCreateAtCurrentAsync();     
             WaitForValidAvatar();
             _enabled = (bool) _avatarConfig.Parameters["Plasma/enabled"];
-
             OscParameter.SendAvatarParameter("Plasma/connected", true);
+            _logger.LogInformation("Connected to avatar {0} over osc", _avatarConfig.Name);
 
             if (!_enabled) {
                 WaitForEnable();
@@ -40,7 +37,6 @@ namespace Plasma.Server {
             CancellationToken serverToken = tokenSource.Token;
 
             await _server.StartAsync(serverToken);
-            _server.PacketReceived += onHeartRate;
         }
         public Task StopAsync(CancellationToken token) {
             OscParameter.SendAvatarParameter("Plasma/connected", false);
@@ -50,7 +46,7 @@ namespace Plasma.Server {
 
         }
 
-        private void onHeartRate(Object sender, PacketReceivedEventArgs args) {
+        private void OnHeartRate(Object sender, PacketReceivedEventArgs args) {
             if (!_enabled) {
                 CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -60,6 +56,10 @@ namespace Plasma.Server {
             }
 
             OscParameter.SendAvatarParameter("Plasma/bpm", args.content);
+        }
+        private void OnAviChanged(OscAvatar avi, ValueChangedEventArgs<OscAvatar> args) {
+            _avatarConfig = OscAvatarConfig.CreateAtCurrent();
+            WaitForValidAvatar();
         }
         private void WaitForEnable() {
             while (!_enabled) {
