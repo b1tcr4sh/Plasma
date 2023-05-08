@@ -21,16 +21,16 @@ To connect the pulse oximeter to the board, connect/solder these pins:
 Then you'll need to install Arduino IDE 2 or Arduino Cli and the ESP32 board extension, then configure your wifi SSID, password, and the ip address of the server in `Firmware.ino`, then flash to the board.  Once you power the board on, it should connect to wifi, then search for the server (Read the serial output).
 
 I'm also planning to design a 3d-printable case which mounts a battery pack and uses elastic bands to attach the device to your upper arm or wrist. I'm lazy and CAD is hard, so maybe I'll get to it.. ?
-### Server
-This is really simple.  Just download a build of the server from [Releases](https://github.com/ChronicallyKyra/Plasma/releases) and run it from a cmd before starting VRChat.
+
+### Configuring Software
+#### Server
+Just download a build of the server from [releases](https://github.com/ChronicallyKyra/Plasma/releases) and run it from a cmd before starting VRChat.
 >Make sure to include the --port= and --address= parameters
-
-
-### Configuring Your Avatar
-The server communicates with your avatar over OSC by reading and updating three required parameters:
-
+#### VRCOSC
+If you're already using/would rather use [VRCOSC](https://github.com/volcanicarts/vrcosc), there's also a module included in the [releases](https://github.com/ChronicallyKyra/Plasma/releases) as a dll.  Just follow the VRCOSC instructions for importing a module.
+#### Avatar
 | Parameter | Type | Notes |
 | ----- | --- | --- |
-| `Plasma/enable` | bool | Writeable; toggled to enable/disable updating of bpm |
-| `Plasma/connected` | bool | Readonly; shows connection status of server |
-| `Plasma/bpm` | int | Readonly; heartrate in bpm |
+| `Plasma/Enable` | bool | Writeable; toggled to enable/disable updating of bpm |
+| `Plasma/Online` | bool | Readonly; shows connection status of server |
+| `Plasma/BPM` | int | Readonly; heartrate in bpm |
