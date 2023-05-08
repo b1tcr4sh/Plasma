@@ -27,16 +27,18 @@ namespace PlasmaOSCModule
             int port = GetSetting<int>(PlasmaOSCSetting.ClientPort);
 
             _server = new SocketServer(address, port);
-            server.PacketReceived += OnPacket;
+            _server.PacketReceived += OnPacket;
 
-            server.StartAsync().GetAwaiter().GetResult();
+            CancellationToken token = new CancellationTokenSource().Token;
+            _server.StartAsync(token).GetAwaiter().GetResult();
         }
         protected override void OnModuleUpdate()
         {
         }
         protected override void OnModuleStop()
         {
-            _server.StopAsync().GetAwaiter().GetResult();
+            CancellationToken token = new CancellationTokenSource().Token;
+            _server.StopAsync(token).GetAwaiter().GetResult();
             _server.Dispose();
         }
 
