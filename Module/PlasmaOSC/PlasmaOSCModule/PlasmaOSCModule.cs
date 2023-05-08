@@ -16,9 +16,9 @@ namespace PlasmaOSCModule
         {
             CreateSetting(PlasmaOSCSetting.ClientAddress, "Client Address", "Address of the hardware", string.Empty);
             CreateSetting(PlasmaOSCSetting.ClientPort, "Client Port", "Port of the hardware", string.Empty);
-            CreateParameter<float>(PlasmaOSCParameter.BPM, ParameterMode.Write, @"VRCOSC/Plasma/BPM", "Heartrate BPM", "BPM value sent from client. Updates periodically.");
-            CreateParameter<bool>(PlasmaOSCParameter.Enabled, ParameterMode.ReadWrite, @"VRCOSC/Plasma/Enabled", "Toggle", "Toggles whether or not BPM updates are sent.");
-            CreateParameter<bool>(PlasmaOSCParameter.Online, ParameterMode.Write, @"VRCOSC/Plasma/Online", "Online/Active", "Whether client is online and connected");
+            CreateParameter<int>(PlasmaOSCParameter.BPM, ParameterMode.Write, @"Plasma/BPM", "Heartrate BPM", "BPM value sent from client. Updates periodically.");
+            CreateParameter<bool>(PlasmaOSCParameter.Enabled, ParameterMode.ReadWrite, @"Plasma/Enable", "Toggle", "Toggles whether or not BPM updates are sent.");
+            CreateParameter<bool>(PlasmaOSCParameter.Online, ParameterMode.Write, @"Plasma/Online", "Online/Active", "Whether client is online and connected");
         }
 
         protected override void OnModuleStart()
