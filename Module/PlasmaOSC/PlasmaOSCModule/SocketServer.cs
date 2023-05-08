@@ -1,11 +1,15 @@
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using VRCOSC.Game.Modules;
+using VRCOSC.Game.Modules.ChatBox;
 
 namespace PlasmaOSCModule {
     public delegate void PacketReceived(object sender, PacketReceivedEventArgs e);
+    public delegate void ClientConnected(object sender, ClientConnectedEventArgs e);
     public class SocketServer : IDisposable {
         public event EventHandler<PacketReceivedEventArgs> PacketReceived;
+        public event EventHandler<ClientConnectedEventArgs> ClientConnected;
         private Socket _listenerSock;
         private Socket _handlerSock;
         private CancellationTokenSource _waitCancellation;
@@ -19,7 +23,7 @@ namespace PlasmaOSCModule {
 
         public async Task StartAsync(CancellationToken token) {
             if (_address is null || _port == 0) {
-                throw new ArgumentNullException("Arguments to SocketServer were null!");
+                throw new ArgumentNullException("Arguments were null!");
             }
             
             IPAddress ipAddress;
@@ -32,9 +36,8 @@ namespace PlasmaOSCModule {
             _listenerSock.Bind(endPoint);
             _listenerSock.Listen(100);
 
-            // _logger.LogInformation("Listening for TCP connections on {0}:{1}...", _address, _port);
             _handlerSock = await _listenerSock.AcceptAsync();
-            // _logger.LogInformation("Connected to a socket!");
+            ClientConnected.Invoke(this, new ClientConnectedEventArgs(_handlerSock.AddressFamily));
 
             _waitCancellation = new CancellationTokenSource();
             await WaitForPacketAsync(_handlerSock, _waitCancellation.Token);
@@ -76,6 +79,12 @@ namespace PlasmaOSCModule {
         public string content { get; set; }
         public PacketReceivedEventArgs(string content) : base() {
             this.content = content;
+        }
+    }
+    public class ClientConnectedEventArgs : EventArgs {
+        public AddressFamily address { get; set; }
+        public ClientConnectedEventArgs(AddressFamily address) : base() {
+            this.address = address;
         }
     }
 }
