@@ -19,8 +19,8 @@ namespace PlasmaOSCModule
         private bool _debug;
 
         protected override void CreateAttributes() {
-            CreateSetting(PlasmaOSCSetting.ClientAddress, "Client Address", "Address of the hardware", string.Empty);
-            CreateSetting(PlasmaOSCSetting.ClientPort, "Client Port", "Port of the hardware", string.Empty);
+            CreateSetting(PlasmaOSCSetting.ClientAddress, "Address", "IP Address to listen on", string.Empty);
+            CreateSetting(PlasmaOSCSetting.ClientPort, "Port", "Port to listen on", string.Empty);
             CreateSetting(PlasmaOSCSetting.MinimumDelta, "Minimum BPM Delta", "Minimum difference between current and last BPM in order to update", 10);
             CreateSetting(PlasmaOSCSetting.DebugOutput, "Debug Output", "Toggles logging of each BPM packet", false);
             CreateParameter<int>(PlasmaOSCParameter.BPM, ParameterMode.Write, @"Plasma/BPM", "Heartrate BPM", "BPM value sent from client. Updates periodically.");
