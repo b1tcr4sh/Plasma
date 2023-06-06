@@ -82,7 +82,7 @@ namespace Plasma.Server {
             string res = Encoding.UTF8.GetString(buffer, 0, resLength);
             handler.Send(Encoding.UTF8.GetBytes("<|ACK|>"), SocketFlags.None);
 
-            PacketReceived.Invoke(this, new PacketReceivedEventArgs(res));
+            PacketReceived.Invoke(this, new PacketReceivedEventArgs(int.Parse(res)));
             await Task.Delay(1000);
             await WaitForPacketAsync(handler, cancellation);
         }
@@ -101,8 +101,8 @@ namespace Plasma.Server {
         }
     }
     public class PacketReceivedEventArgs : EventArgs {
-        public string content { get; set; }
-        public PacketReceivedEventArgs(string content) : base() {
+        public int content { get; set; }
+        public PacketReceivedEventArgs(int content) : base() {
             this.content = content;
         }
     }

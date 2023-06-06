@@ -10,19 +10,17 @@
 
 WiFiClient client;
 MAX30105 Sensor;
+IPAddress server_address;
+int server_port;
 
 void setup() {
   Serial.begin(115200);
 
   wifi_connect();
-  IPAddress server_address = IPAddress(192, 168, 1, 118);
+  server_address = IPAddress(192, 168, 1, 121);
+  server_port = 3012;
   client = WiFiClient();
-  int socket_connection = 0;
-
-  while (!socket_connection) {
-    Serial.println("Trying to connect to tcp socket");
-    socket_connection = client.connect(server_address, 3012);
-  }
+  server_connect();
   
   Serial.println("Connected!");
 
@@ -42,6 +40,10 @@ void loop() {
   int bpm = sample(4);
   itoa(bpm, buffer, 10);
   client.write(buffer);
+  // if (client.read() == -1) {
+  //   client.stop();
+  //   server_connect();
+  // }
 }
 
 void wifi_connect() {
@@ -57,6 +59,15 @@ void wifi_connect() {
       Serial.print('.');
       delay(1000);
     }
+}
+
+void server_connect() {
+  int socket_connection = 0;
+
+  while (!socket_connection) {
+    Serial.println("Trying to connect to tcp socket");
+    socket_connection = client.connect(server_address, server_port);
+  }
 }
 
 int sample(int size) {

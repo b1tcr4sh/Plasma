@@ -7,9 +7,12 @@ using BuildSoft.VRChat.Osc;
 
 namespace Plasma.Server {
     public class OscClient : IHostedService, IDisposable {
+        //TODO
+        // Handle disable then reenable without having to reload avi
+
         private ILogger<OscClient> _logger;
         private OscAvatarConfig _avatarConfig;
-        private bool _enabled;
+        private bool _enabled = false;
         private SocketServer _server;
 
         public OscClient(SocketServer socketServer, IConfiguration config, ILogger<OscClient> logger) {
@@ -24,15 +27,10 @@ namespace Plasma.Server {
             _logger.LogInformation("Starting OSC client");
 
             _avatarConfig = await OscAvatarConfig.WaitAndCreateAtCurrentAsync();     
-            WaitForValidAvatar();
-            _enabled = (bool) _avatarConfig.Parameters["Plasma/enabled"];
-            OscParameter.SendAvatarParameter("Plasma/connected", true);
-            _logger.LogInformation("Connected to avatar {0} over osc", _avatarConfig.Name);
-
-            if (!_enabled) {
-                WaitForEnable();
+            if (CheckAviValid()) {
+                SetupAvi();
             }
-
+            
             CancellationTokenSource tokenSource = new CancellationTokenSource();
             CancellationToken serverToken = tokenSource.Token;
 
@@ -47,19 +45,41 @@ namespace Plasma.Server {
         }
 
         private void OnHeartRate(Object sender, PacketReceivedEventArgs args) {
-            if (!_enabled) {
-                CancellationTokenSource tokenSource = new CancellationTokenSource();
+            bool valid = CheckAviValid();
 
-                _server.StopAsync(tokenSource.Token).GetAwaiter().GetResult();
-                WaitForEnable();
+            if (!_enabled) {
+                // CancellationTokenSource tokenSource = new CancellationTokenSource();
+
+                // _server.StopAsync(tokenSource.Token).GetAwaiter().GetResult();
+                // WaitForEnable();
+                // if (valid) {
+                //     WaitForEnable() -- Waits on every event thread
+                // }
+
+                return;
+            }
+            // Scale heartrate 30-200 - 0.1-1
+            float normalized = (float) (args.content * 0.5) / 100;
+
+            OscParameter.SendAvatarParameter("Plasma/bpm", normalized);
+        }
+        private void OnAviChanged(OscAvatar avi, ValueChangedEventArgs<OscAvatar> args) {
+            _enabled = false;
+            _avatarConfig = OscAvatarConfig.WaitAndCreateAtCurrentAsync().GetAwaiter().GetResult();
+            if (!CheckAviValid()) {
                 return;
             }
 
-            OscParameter.SendAvatarParameter("Plasma/bpm", args.content);
+            SetupAvi();
         }
-        private void OnAviChanged(OscAvatar avi, ValueChangedEventArgs<OscAvatar> args) {
-            _avatarConfig = OscAvatarConfig.CreateAtCurrent();
-            WaitForValidAvatar();
+        private void SetupAvi() {
+                _enabled = (bool) _avatarConfig.Parameters["Plasma/enabled"];
+                OscParameter.SendAvatarParameter("Plasma/connected", true);
+                _logger.LogInformation("Connected to avatar {0} over osc", _avatarConfig.Name);
+
+                if (!_enabled) {
+                    WaitForEnable();
+                }
         }
         private void WaitForEnable() {
             while (!_enabled) {
@@ -67,16 +87,25 @@ namespace Plasma.Server {
                 Thread.Sleep(1000);
             }
         }
-        private void WaitForValidAvatar() {
+        private bool CheckAviValid() {
             try {
                 var enabled = _avatarConfig.Parameters["Plasma/enable"];
                 var connected = _avatarConfig.Parameters["Plasma/connected"];
                 var bpm = _avatarConfig.Parameters["Plasma/bpm"];
-            } catch (KeyNotFoundException) {
-                _logger.LogWarning("Current avatar doesn't have needed paramters...");
-                Thread.Sleep(1000);
-                WaitForValidAvatar();
+
+                _logger.LogDebug("enabled is {0} by default", enabled);
+                _logger.LogDebug("connected is {0} by default", connected);
+                _logger.LogDebug("bpm is {0} by default", bpm);
+            } catch (Exception) {
+                return false;
             }
+            if (_avatarConfig.Parameters["Plasma/enable"] is null) {
+                _avatarConfig.Parameters["Plasma/enable"] = false;
+            }
+            if (_avatarConfig.Parameters["Plasma/connected"] is null) {
+                _avatarConfig.Parameters["Plasma/connected"] = false;
+            }
+            return true;
         }
     }
 }

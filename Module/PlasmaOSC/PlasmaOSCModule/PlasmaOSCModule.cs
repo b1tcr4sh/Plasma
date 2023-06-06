@@ -5,7 +5,7 @@ namespace PlasmaOSCModule
 {
     public partial class PlasmaOSCModule : ChatBoxModule
     {
-        public override string Title => "PlasmaOSC";
+        public override string Title => "Plasma";
         public override string Description => "Connects to Plasma client";
         public override string Author => "Kyra";
         public override ModuleType Type => ModuleType.General;
